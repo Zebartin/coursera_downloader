@@ -45,27 +45,29 @@ class Downloader:
             return
         while True:
             async with self.sem:
-                async with self.session.get(lecture.url) as resp:
-                    with open(saving_path, 'wb') as f:
-                        retry = self.max_retry
-                        while retry > 0:
-                            try:
-                                chunk = await resp.content.readany()
-                            except KeyboardInterrupt:
-                                logging.warning('Interrupted')
-                                f.close()
-                                os.remove(saving_path)
-                                raise
-                            except:
-                                retry -= 1
-                                continue
-                            if len(chunk) == 0:
-                                break
-                            f.write(chunk)
+                try:
+                    async with self.session.get(lecture.url) as resp:
+                        with open(saving_path, 'wb') as f:
                             retry = self.max_retry
-                        else:
-                            os.remove(saving_path)
-                            continue
+                            while retry > 0:
+                                try:
+                                    chunk = await resp.content.readany()
+                                except KeyboardInterrupt:
+                                    f.close()
+                                    os.remove(saving_path)
+                                    raise
+                                except:
+                                    retry -= 1
+                                    continue
+                                if len(chunk) == 0:
+                                    break
+                                f.write(chunk)
+                                retry = self.max_retry
+                            else:
+                                os.remove(saving_path)
+                                continue
+                except asyncio.exceptions.CancelledError:
+                    continue
             break
 
     async def __download_lecture_subtitle(self, lecture: Lecture, saving_path_prefix: str) -> None:
