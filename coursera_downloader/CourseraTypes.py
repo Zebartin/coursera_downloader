@@ -5,12 +5,16 @@ PREFIX = '    '
 
 
 class Item:
-    def __init__(self, item_id, name) -> None:
-        self.id = item_id
+    def __init__(self, course_id, item_id, name) -> None:
+        self.id = f'{course_id}~{item_id}'
         self.name = formatted_file_name(name)
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def type_name(self) -> str:
+        return type(self).__name__
 
 
 class Lecture(Item):
@@ -23,6 +27,10 @@ class Lecture(Item):
     @property
     def file_name(self) -> str:
         return self.name + '.mp4'
+
+    @property
+    def subtitle_name(self) -> str:
+        return self.name + '.srt'
 
 
 class Supplement(Item):

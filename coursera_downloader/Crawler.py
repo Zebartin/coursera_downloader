@@ -12,6 +12,7 @@ class Crawler:
         self.sem = asyncio.Semaphore(5)
 
     async def crawl_course(self, course_slug) -> Course:
+        click.echo('Getting course details...')
         async with self.session.get(API_URL_COURSE(course_slug)) as resp:
             course_json = (await resp.json())['elements'][0]
         course_name = course_json['name']
@@ -22,6 +23,7 @@ class Crawler:
         ret_course = Course(course_id, course_slug, course_name,
                             primary_language, chosen_language)
 
+        click.echo('Getting course materials...')
         async with self.session.get(API_URL_MATRIAL(course_slug)) as resp:
             course_material_json = (await resp.json())['linked']
         id2item = {}
@@ -36,11 +38,12 @@ class Crawler:
             if item.get('isLocked'):
                 logging.info(f'locked item: {item["name"]}')
             if type_name == 'lecture':
-                lecture = Lecture(item['id'], item['name'])
+                lecture = Lecture(course_id, item['id'], item['name'])
                 id2item[item['id']] = lecture
                 crawling_tasks.append(self.crawl_lecture(ret_course, lecture))
             elif type_name == 'supplement':
-                id2item[item['id']] = Supplement(item['id'], item['name'])
+                id2item[item['id']] = Supplement(
+                    course_id, item['id'], item['name'])
 
         id2lesson = {}
         for lesson in course_material_json['onDemandCourseMaterialLessons.v1']:
@@ -55,11 +58,12 @@ class Crawler:
             tmp_module = Module(module['id'], module['name'])
             for lesson_id in module['lessonIds']:
                 lesson = id2lesson.get(lesson_id)
-                if lesson is not None:
+                if lesson is not None and len(lesson.items) != 0:
                     tmp_module.add_lesson(lesson)
             ret_course.add_module(tmp_module)
 
         await asyncio.gather(*crawling_tasks)
+        return ret_course
 
     def __choose_language(self, options):
         click.echo('What language(s) do you want for subtitles?')
@@ -84,12 +88,15 @@ class Crawler:
                 continue
             break
         if chosen_index[0] == 0:
+            click.echo('You choose no subtitle.')
             return []
-        return [options[i - 1] for i in chosen_index]
+        ret = [options[i - 1] for i in chosen_index]
+        click.echo(f'You choose: {", ".join(ret)}')
+        return ret
 
     async def crawl_lecture(self, course: Course, lecture: Lecture):
         async with self.sem:
-            async with self.session.get(API_URL_LECTURE(course.id, lecture.id)) as resp:
+            async with self.session.get(API_URL_LECTURE(lecture.id)) as resp:
                 lecture_json = (await resp.json())['linked']
         video_json = lecture_json['onDemandVideos.v1'][0]['sources']['byResolution']
         subtitle_json = lecture_json['onDemandVideos.v1'][0]['subtitles']
