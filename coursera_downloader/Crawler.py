@@ -2,8 +2,8 @@ import aiohttp
 import asyncio
 import logging
 import click
-from CourseraTypes import Course, Lecture, Lesson, Module, Supplement
-from utils import API_URL_COURSE, API_URL_LECTURE, API_URL_MATRIAL
+from CourseraTypes import Specification, Course, Lecture, Lesson, Module, Supplement
+from utils import API_URL_SPEC, API_URL_COURSE, API_URL_LECTURE, API_URL_MATRIAL
 
 
 class Crawler:
@@ -11,12 +11,24 @@ class Crawler:
         self.session = session
         self.sem = asyncio.Semaphore(5)
 
-    async def crawl_course(self, course_slug) -> Course:
+    async def crawl_specification(self, spec_slug) -> Specification:
+        click.echo('Getting specification details...')
+        async with self.session.get(API_URL_SPEC(spec_slug)) as resp:
+            spec_json = (await resp.json())['elements'][0]
+        name = spec_json['name']
+        spec_id = spec_json['id']
+        ret_spec = Specification(spec_id, spec_slug, name)
+        for i in spec_json['courseIds']:
+            ret_spec.add_course(await self.crawl_course(None, i))
+        return ret_spec
+
+    async def crawl_course(self, course_slug, course_id) -> Course:
         click.echo('Getting course details...')
-        async with self.session.get(API_URL_COURSE(course_slug)) as resp:
+        async with self.session.get(API_URL_COURSE(course_slug, course_id)) as resp:
             course_json = (await resp.json())['elements'][0]
         course_name = course_json['name']
         course_id = course_json['id']
+        course_slug = course_json['slug']
         primary_language = course_json['primaryLanguageCodes']
         chosen_language = self.__choose_language(
             course_json['subtitleLanguageCodes'] + primary_language)

@@ -3,8 +3,14 @@ import platform
 URL_ROOT = 'https://www.coursera.org'
 
 
-def API_URL_COURSE(slug):
-    return f'{URL_ROOT}/api/onDemandCourses.v1?q=slug&slug={slug}'
+def API_URL_SPEC(slug):
+    return f'{URL_ROOT}/api/onDemandSpecializations.v1?q=slug&slug={slug}&fields=courseIds'
+
+
+def API_URL_COURSE(slug, course_id=None):
+    if slug:
+        return f'{URL_ROOT}/api/onDemandCourses.v1?q=slug&slug={slug}'
+    return f'{URL_ROOT}/api/onDemandCourses.v1/{course_id}'
 
 
 def API_URL_MATRIAL(slug):
@@ -20,7 +26,6 @@ def API_URL_SUPPLEMENT(item_id):
 
 
 def formatted_file_name(file_name: str):
-    if platform.system == 'Windows':
-        for c in '<>:"/\|?*':
-            file_name = file_name.replace(c, '')
+    for c in '<>:"/\|?*':
+        file_name = file_name.replace(c, '')
     return file_name

@@ -5,8 +5,8 @@ import aiohttp
 from http.cookiejar import MozillaCookieJar
 from Crawler import Crawler
 from Downloader import Downloader
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(filename)s[%(lineno)d] - %(message)s')
+# logging.basicConfig(level=logging.INFO,
+                    # format='%(asctime)s - %(filename)s[%(lineno)d] - %(message)s')
 
 
 async def main():

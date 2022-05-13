@@ -4,7 +4,7 @@ import click
 import os
 import logging
 from typing import List
-from CourseraTypes import Course, Lecture, Supplement
+from CourseraTypes import Course, Lecture, Specification, Supplement
 from utils import API_URL_SUPPLEMENT
 
 
@@ -14,13 +14,18 @@ class Downloader:
         self.max_retry = 5
         self.sem = asyncio.Semaphore(3)
 
-    async def download_course(self, course: Course, saving_path: str):
+    async def download_spec(self, spec: Specification, saveing_path: str):
+        saveing_path = os.path.join(saveing_path, spec.name)
+        for i, course in enumerate(spec.courses):
+            await self.download_course(course, saveing_path, f'{i+1:02} ')
+
+    async def download_course(self, course: Course, saving_path: str, course_prefix: str = ""):
         click.echo('Downloading...')
         downloading_tasks = []
         for i, module in enumerate(course.modules):
             for j, lesson in enumerate(module.lessons):
                 lesson_path = os.path.join(
-                    saving_path, course.name, f'{i + 1:02} {module.name}', f'{j + 1:02} {lesson.name}')
+                    saving_path, course_prefix + course.name, f'{i + 1:02} {module.name}', f'{j + 1:02} {lesson.name}')
                 os.makedirs(lesson_path, exist_ok=True)
                 for k, item in enumerate(lesson.items):
                     full_path_prefix = os.path.join(lesson_path, f'{k+1:02} ')

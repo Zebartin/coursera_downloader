@@ -79,3 +79,14 @@ class Course:
 
     def __str__(self) -> str:
         return '\n'.join([self.name] + [PREFIX + line for m in self.modules for line in str(m).split('\n')])
+
+
+class Specification:
+    def __init__(self, spec_id, spec_slug, name) -> None:
+        self.id = spec_id
+        self.slug = spec_slug
+        self.name = formatted_file_name(name)
+        self.courses: List[Course] = []
+
+    def add_course(self, course: Course) -> None:
+        self.courses.append(course)
